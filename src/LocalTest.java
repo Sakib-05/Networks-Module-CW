@@ -129,6 +129,7 @@ class LocalTest {
 	    return;
 	}
     }
+	// test commit purposes
 
     // This sends gives each node some initial address key/value pairs
     // You don't need to know how this works
