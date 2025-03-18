@@ -133,30 +133,30 @@ class LocalTest {
     // This sends gives each node some initial address key/value pairs
     // You don't need to know how this works
     public static void bootstrap (Node [] nodes) throws Exception {
-	int seed = 23; // Change for different initial network topologies
-	Random r = new Random(seed);
-	int n = nodes.length;
-	double p =  Math.log( (double) n+5 ) / (double)n;
+		int seed = 23; // Change for different initial network topologies
+		Random r = new Random(seed);
+		int n = nodes.length;
+		double p =  Math.log( (double) n+5 ) / (double)n;
 
         DatagramSocket ds = new DatagramSocket(20099);
-	byte[] contents = {0x30, 0x30, 0x20, 0x57, 0x20, 0x30, 0x20, 0x4E, 0x3A, 0x74, 0x65, 0x73, 0x74, 0x21, 0x20, 0x30, 0x20, 0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x3A, 0x32, 0x30, 0x31, 0x31, 0x21, 0x20 };
+		byte[] contents = {0x30, 0x30, 0x20, 0x57, 0x20, 0x30, 0x20, 0x4E, 0x3A, 0x74, 0x65, 0x73, 0x74, 0x21, 0x20, 0x30, 0x20, 0x31, 0x32, 0x37, 0x2E, 0x30, 0x2E, 0x30, 0x2E, 0x31, 0x3A, 0x32, 0x30, 0x31, 0x31, 0x21, 0x20 };
 	
-	for (int i = 0; i < n; ++i) {
-	    for (int j = 0; j < n; ++j) {
-		if (i == j) {
-		    // Skip
-		} else {
-		    if (r.nextDouble() <= p) {
-			contents[0x00] = (byte)(0x41 + i);
-			contents[0x01] = (byte)(0x42 + j);
-			contents[0x0D] = (byte)(0x30 + j);
-			contents[0x1F] = (byte)(0x30 + j);
-			DatagramPacket packet = new DatagramPacket(contents, contents.length, InetAddress.getLocalHost(), 20110 + i);
-			ds.send(packet);
-		    }
+		for (int i = 0; i < n; ++i) {
+	    	for (int j = 0; j < n; ++j) {
+				if (i == j) {
+		    	// Skip
+				}
+				else {
+		    		if (r.nextDouble() <= p) {
+					contents[0x00] = (byte)(0x41 + i);
+					contents[0x01] = (byte)(0x42 + j);
+					contents[0x0D] = (byte)(0x30 + j);
+					contents[0x1F] = (byte)(0x30 + j);
+					DatagramPacket packet = new DatagramPacket(contents, contents.length, InetAddress.getLocalHost(), 20110 + i);
+					ds.send(packet);
+		    		}
+				}
+	    	}
 		}
-	    }
-	}
-	return;
     }
 }
