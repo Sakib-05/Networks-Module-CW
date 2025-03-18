@@ -29,13 +29,14 @@ class LocalTest {
 	    // If you want to test with more nodes,
 	    // set the number as a command line argument
 	    if (args.length > 0) {
-		int n = Integer.parseInt(args[0]);
-		if (n >= 2 && n <= 10) {
-		    numberOfNodes = n; 
-		} else {
+			int n = Integer.parseInt(args[0]);
+			if (n >= 2 && n <= 10) {
+		    	numberOfNodes = n;
+			}
+			else {
 		    // If you want more than 10 nodes, you will need
 		    // to change how bootstrapping is done
-		}
+			}
 	    }
 	
 	    // Create an array of nodes and initialise them
