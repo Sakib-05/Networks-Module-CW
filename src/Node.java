@@ -2,9 +2,9 @@
 // Coursework 2024/2025
 //
 // Submission by
-//  YOUR_NAME_GOES_HERE
-//  YOUR_STUDENT_ID_NUMBER_GOES_HERE
-//  YOUR_EMAIL_GOES_HERE
+//  Sakib Imamul Hoque
+//  230065540
+//  sakib.imamul-hoque@city.ac.uk
 
 
 // DO NOT EDIT starts
@@ -127,7 +127,27 @@ public class Node implements NodeInterface {
     }
 
     public boolean exists(String key) throws Exception {
-	throw new Exception("Not implemented");
+        //A : Does the node have a key/value pair whose key matches the
+        //       requested key?
+        //   B : Is the node one of the three closest address key/value pairs to
+        //       the requested key?
+
+        //   * A true --> the response character MUST be 'Y'.
+        //   * A false, B true --> the response character MUST be 'N'.
+        //   * A false, B false --> the response character MUST be '?'.
+
+        if(key.equals(name)){
+            return true;
+        }
+
+        for (int distance : storedAddresses.keySet() /* for each distance*/){
+            for(String searchKey : storedAddresses.get(distance).keySet() /* for each key in the key/value pairs at that distance*/){
+                if(searchKey.equals(key)){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public String read(String key) throws Exception {
