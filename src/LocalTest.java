@@ -92,7 +92,7 @@ class LocalTest {
 	    int successfulTests = 0;
 
 	    // We will try to store them in the network.
-	    // Which node the are stored on will depend on how many nodes there are in the network.
+	    // Which node they are stored on will depend on how many nodes there are in the network.
 	    for (int i = 0; i < lines.size(); ++i) {
 		String key = "D:Juliet-" + i;
 		System.out.print("Trying to write " + key);

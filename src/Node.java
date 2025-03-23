@@ -100,14 +100,17 @@ public class Node implements NodeInterface {
     // It MUST store at most three address key/value pairs for every distance
     //for each distance int dist, there is a list of address key/value pairs
     // each pair is this way (node name, IP address : UDP port number)
-    HashMap<Integer, Map<String, String>> storedAddresses = new HashMap<>();
+    HashMap<Integer, Map<String, String>> addressMap = new HashMap<>();
+
+    //data map : data name, any string
+    HashMap<String,String> dataMap = new HashMap<>();
 
     public void setNodeName(String nodeName) throws Exception {
 	    this.name = nodeName;
     }
 
     public void openPort(int portNumber) throws Exception {
-	throw new Exception("Not implemented");
+        this.UDPPort = portNumber;
     }
 
     public void handleIncomingMessages(int delay) throws Exception {
@@ -140,8 +143,8 @@ public class Node implements NodeInterface {
             return true;
         }
 
-        for (int distance : storedAddresses.keySet() /* for each distance*/){
-            for(String searchKey : storedAddresses.get(distance).keySet() /* for each key in the key/value pairs at that distance*/){
+        for (int distance : addressMap.keySet() /* for each distance*/){
+            for(String searchKey : addressMap.get(distance).keySet() /* for each key in the key/value pairs at that distance*/){
                 if(searchKey.equals(key)){
                     return true;
                 }
@@ -151,11 +154,14 @@ public class Node implements NodeInterface {
     }
 
     public String read(String key) throws Exception {
-	throw new Exception("Not implemented");
+	    if(dataMap.containsKey(key)){
+            return dataMap.get(key);
+        }
+        return null;
     }
 
     public boolean write(String key, String value) throws Exception {
-	throw new Exception("Not implemented");
+        return true;
     }
 
     public boolean CAS(String key, String currentValue, String newValue) throws Exception {
