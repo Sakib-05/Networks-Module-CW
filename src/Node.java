@@ -12,12 +12,15 @@
 // These descriptions are intended to help you understand how the interface
 // will be used. See the RFC for how the protocol works.
 
+import java.util.HashMap;
+import java.util.Map;
+
 interface NodeInterface {
 
     /* These methods configure your node.
      * They must both be called once after the node has been created but
      * before it is used. */
-    
+
     // Set the name of the node.
     public void setNodeName(String nodeName) throws Exception;
 
@@ -34,7 +37,7 @@ interface NodeInterface {
     // there are no new incoming messages return.
     // If delay is zero then wait for an unlimited amount of time.
     public void handleIncomingMessages(int delay) throws Exception;
-    
+
     // Determines if a node can be contacted and is responding correctly.
     // Handles any messages that have arrived.
     public boolean isActive(String nodeName) throws Exception;
@@ -42,14 +45,14 @@ interface NodeInterface {
     // You need to keep a stack of nodes that are used to relay messages.
     // The base of the stack is the first node to be used as a relay.
     // The first node must relay to the second node and so on.
-    
+
     // Adds a node name to a stack of nodes used to relay all future messages.
     public void pushRelay(String nodeName) throws Exception;
 
     // Pops the top entry from the stack of nodes used for relaying.
     // No effect if the stack is empty
     public void popRelay() throws Exception;
-    
+
 
     /*
      * These methods provide access to the basic functionality of
@@ -59,7 +62,7 @@ interface NodeInterface {
     // Checks if there is an entry in the network with the given key.
     // Handles any messages that have arrived.
     public boolean exists(String key) throws Exception;
-    
+
     // Reads the entry stored in the network for key.
     // If there is a value, return it.
     // If there isn't a value, return null.
@@ -82,8 +85,25 @@ interface NodeInterface {
 // Complete this!
 public class Node implements NodeInterface {
 
+    //node name
+    String name;
+
+    //hashID of a node is the Hash(node name)
+    String hashID;
+
+    //node IP address
+    String IPAddress;
+
+    //node UDP port
+    int UDPPort;
+
+    // It MUST store at most three address key/value pairs for every distance
+    //for each distance int dist, there is a list of address key/value pairs
+    // each pair is this way (node name, IP address : UDP port number)
+    HashMap<Integer, Map<String, String>> storedAddresses = new HashMap<>();
+
     public void setNodeName(String nodeName) throws Exception {
-	throw new Exception("Not implemented");
+	    this.name = nodeName;
     }
 
     public void openPort(int portNumber) throws Exception {
@@ -93,11 +113,11 @@ public class Node implements NodeInterface {
     public void handleIncomingMessages(int delay) throws Exception {
 	throw new Exception("Not implemented");
     }
-    
+
     public boolean isActive(String nodeName) throws Exception {
 	throw new Exception("Not implemented");
     }
-    
+
     public void pushRelay(String nodeName) throws Exception {
 	throw new Exception("Not implemented");
     }
@@ -109,7 +129,7 @@ public class Node implements NodeInterface {
     public boolean exists(String key) throws Exception {
 	throw new Exception("Not implemented");
     }
-    
+
     public String read(String key) throws Exception {
 	throw new Exception("Not implemented");
     }

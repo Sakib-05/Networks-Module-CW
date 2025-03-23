@@ -5,13 +5,24 @@
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 public class HashID {
 
     public static byte [] computeHashID(String s) throws Exception {
 	// What this does and how it works is covered in a later lecture
-	MessageDigest md = MessageDigest.getInstance("SHA-256");
-	md.update(s.getBytes(StandardCharsets.UTF_8));
-	return md.digest();
+		MessageDigest md = MessageDigest.getInstance("SHA-256");
+		md.update(s.getBytes(StandardCharsets.UTF_8));
+		return md.digest();
+
+    }
+
+	public static void main(String[] args) {
+		try {
+			System.out.println(Arrays.toString(computeHashID("sakib")));
+
+		} catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
