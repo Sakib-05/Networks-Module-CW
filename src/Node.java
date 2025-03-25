@@ -12,6 +12,10 @@
 // These descriptions are intended to help you understand how the interface
 // will be used. See the RFC for how the protocol works.
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -97,6 +101,8 @@ public class Node implements NodeInterface {
     //node UDP port
     int UDPPort;
 
+    private DatagramSocket socket;
+
     // It MUST store at most three address key/value pairs for every distance
     //for each distance int dist, there is a list of address key/value pairs
     // each pair is this way (node name, IP address : UDP port number)
@@ -110,11 +116,36 @@ public class Node implements NodeInterface {
     }
 
     public void openPort(int portNumber) throws Exception {
+        this.socket = new DatagramSocket(portNumber);
         this.UDPPort = portNumber;
     }
 
     public void handleIncomingMessages(int delay) throws Exception {
-	throw new Exception("Not implemented");
+        byte[] buffer = new byte[65535];  // Buffer to store received data
+        DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
+
+        if (delay > 0) {
+            socket.setSoTimeout(delay); // Set timeout for receiving messages
+        } else {
+            socket.setSoTimeout(0); // Wait indefinitely if delay is 0
+        }
+
+        System.out.println("Listening for incoming messages on port " + UDPPort);
+
+        try {
+            socket.receive(receivedPacket);  // Wait for an incoming packet
+
+            // Convert received data to string
+            String receivedMessage = new String(receivedPacket.getData(), 0, receivedPacket.getLength(), StandardCharsets.UTF_8);
+
+            System.out.println("Received message: " + receivedMessage);
+            System.out.println("From: " + receivedPacket.getAddress() + " Port: " + receivedPacket.getPort());
+
+        } catch (SocketTimeoutException e) {
+            System.out.println("Timeout: No incoming messages received.");
+        } finally {
+            socket.close(); // Close socket after use
+        }
     }
 
     public boolean isActive(String nodeName) throws Exception {
@@ -161,7 +192,25 @@ public class Node implements NodeInterface {
     }
 
     public boolean write(String key, String value) throws Exception {
+//        dataMap.put(key,value);
+        //A : Does the node have a key/value pair whose key matches the
+        //       requested key?
+        //   B : Is the node one of the three closest address key/value pairs to
+        //       the requested key?
+
+        //   * A true --> the node MUST replace the key/value pair with the
+        //     requested key/value pair and the response character MUST be 'R'.
+        //   * A false, B true --> the node MUST store the requested key/value
+        //     and the pair the response character MUST be 'A'. THIS SENTENCE DOESN’T MAKE SENSE
+        //   * A false, B false --> the response character MUST be 'X'.
+        if(dataMap.containsKey(key)){
+            dataMap.put(key, value);
+            return true;
+        }
+
+        dataMap.put(key, value);
         return true;
+
     }
 
     public boolean CAS(String key, String currentValue, String newValue) throws Exception {
