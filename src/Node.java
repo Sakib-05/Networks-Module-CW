@@ -37,7 +37,7 @@ interface NodeInterface {
      */
 
     // Handle all incoming messages.
-    // If you wait for more than delay miliseconds and
+    // If you wait for more than delay milliseconds and
     // there are no new incoming messages return.
     // If delay is zero then wait for an unlimited amount of time.
     public void handleIncomingMessages(int delay) throws Exception;
@@ -124,6 +124,8 @@ public class Node implements NodeInterface {
         byte[] buffer = new byte[65535];  // Buffer to store received data
         DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
 
+//        The transaction ID of a response must be the same as the transaction ID of the request.
+
         if (delay > 0) {
             socket.setSoTimeout(delay); // Set timeout for receiving messages
         } else {
@@ -132,21 +134,51 @@ public class Node implements NodeInterface {
 
         System.out.println("Listening for incoming messages on port " + UDPPort);
 
-        try {
-            socket.receive(receivedPacket);  // Wait for an incoming packet
+        while (true) {  // Infinite loop, but will break on timeout
+            try {
+                socket.receive(receivedPacket);  // Wait for an incoming packet
 
-            // Convert received data to string
-            String receivedMessage = new String(receivedPacket.getData(), 0, receivedPacket.getLength(), StandardCharsets.UTF_8);
+                // Convert received data to string
+                String receivedMessage = new String(receivedPacket.getData(), 0, receivedPacket.getLength(), StandardCharsets.UTF_8);
 
-            System.out.println("Received message: " + receivedMessage);
-            System.out.println("From: " + receivedPacket.getAddress() + " Port: " + receivedPacket.getPort());
+                System.out.println("Received:" + receivedMessage);
+                System.out.println("From: " + receivedPacket.getAddress() + " Port: " + receivedPacket.getPort());
 
-        } catch (SocketTimeoutException e) {
-            System.out.println("Timeout: No incoming messages received.");
-        } finally {
-            socket.close(); // Close socket after use
+            } catch (SocketTimeoutException e) {
+                System.out.println("Timeout: No incoming messages received.");
+                break;  // Exit the loop when timeout occurs
+            } catch (Exception e) {
+                System.out.println("Error while receiving message: " + e.getMessage());
+                break;  // Break on any unexpected error
+            }
         }
     }
+
+
+    // Handles different message types
+    private void processIncomingMessage(String message, java.net.InetAddress senderIP, int senderPort) throws Exception {
+        String[] parts = message.split(" ");
+        if (parts.length < 3) return;
+
+        String transactionID = parts[0];
+        String messageType = parts[1];
+
+        if (messageType.equals("R")) {  // Read Request
+            String key = parts[3].substring(2);
+            String response;
+
+            if (dataMap.containsKey(key)) {
+                response = transactionID + " S Y 0 " + dataMap.get(key) + " ";
+            } else {
+                response = transactionID + " O 0 N:" + name + " 0 " + IPAddress + ":" + UDPPort + " ";
+            }
+
+            byte[] responseData = response.getBytes(StandardCharsets.UTF_8);
+            DatagramPacket responsePacket = new DatagramPacket(responseData, responseData.length, senderIP, senderPort);
+            socket.send(responsePacket);
+        }
+    }
+
 
     public boolean isActive(String nodeName) throws Exception {
 	throw new Exception("Not implemented");
@@ -185,35 +217,119 @@ public class Node implements NodeInterface {
     }
 
     public String read(String key) throws Exception {
-	    if(dataMap.containsKey(key)){
-            return dataMap.get(key);
+        DatagramSocket socket = new DatagramSocket();
+        socket.setSoTimeout(2000);  // Set timeout for responses
+
+        // Format the Read request: "AA R 0 D:key "
+        String request = "AA R 0 D:" + key + " ";
+        byte[] sendData = request.getBytes(StandardCharsets.UTF_8);
+
+        for (int distance : addressMap.keySet()) {
+            for (Map.Entry<String, String> entry : addressMap.get(distance).entrySet()) {
+                String nodeName = entry.getKey();
+                String addressPort = entry.getValue();
+
+                String[] parts = addressPort.split(":");
+                String ipAddress = parts[0];
+                int port = Integer.parseInt(parts[1]);
+
+                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,
+                        java.net.InetAddress.getByName(ipAddress), port);
+                socket.send(sendPacket);
+
+                byte[] buffer = new byte[65535];
+                DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
+                try {
+                    socket.receive(receivedPacket);
+                    String response = new String(receivedPacket.getData(), 0, receivedPacket.getLength(), StandardCharsets.UTF_8);
+
+                    // If we receive "AA S Y", extract and return the value
+                    if (response.startsWith("AA S Y")) {
+                        return response.substring(7).trim(); // Extract value from response
+                    }
+
+                    // If we receive "AA O", extract the nearest nodes and retry
+                    else if (response.startsWith("AA O")) {
+                        // Extract nearest nodes and continue querying them
+                        String[] nearestInfo = response.substring(5).trim().split(" ");
+                        for (int i = 0; i < nearestInfo.length; i += 2) {
+                            String nearestNode = nearestInfo[i].substring(2); // Remove "N:"
+                            String nearestAddr = nearestInfo[i + 1];
+
+                            if (!addressMap.containsKey(distance + 1)) {
+                                addressMap.put(distance + 1, new HashMap<>());
+                            }
+                            addressMap.get(distance + 1).put(nearestNode, nearestAddr);
+                        }
+                    }
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Timeout waiting for response from " + nodeName);
+                }
+            }
         }
-        return null;
+
+        socket.close();
+        return null; // Data not found
     }
 
-    public boolean write(String key, String value) throws Exception {
-//        dataMap.put(key,value);
-        //A : Does the node have a key/value pair whose key matches the
-        //       requested key?
-        //   B : Is the node one of the three closest address key/value pairs to
-        //       the requested key?
 
-        //   * A true --> the node MUST replace the key/value pair with the
-        //     requested key/value pair and the response character MUST be 'R'.
-        //   * A false, B true --> the node MUST store the requested key/value
-        //     and the pair the response character MUST be 'A'. THIS SENTENCE DOESN’T MAKE SENSE
-        //   * A false, B false --> the response character MUST be 'X'.
-        if(dataMap.containsKey(key)){
+    public boolean write(String key, String value) throws Exception {
+
+        //        The transaction ID of a response must be the same as the transaction ID of the request.
+        //   A write request consists of a message header followed by a single
+        //   'W' character, a space, a key and a value.
+
+        //example:
+        // Received: *; W 0 N:yellow 0 10.200.51.18:20114
+        // {"*;", "W", "0", "N:yellow", "0", "10.200.51.18:20114"}
+        //0 - transactionID
+        //1 - 'W' meaning it's a write request
+        //2 - spaces in key
+        //3 - key
+        //4 - spaces in value
+        //5 - value (IP : Port), split at ":"
+
+        //A : Does the node have a key/value pair whose key matches the requested key?
+        //B : Is the node one of the three closest address key/value pairs to the requested key?
+
+
+        if (dataMap.containsKey(key)) {
+            dataMap.put(key, value);
+            return true; // Updated value
+        }
+
+        int closestCount = 0;
+        for (int distance : addressMap.keySet()) {
+            if (addressMap.get(distance).containsKey(key)) {
+                closestCount++;
+            }
+        }
+
+        if (closestCount < 3) {  // Only store if it's within the closest 3
             dataMap.put(key, value);
             return true;
         }
 
-        dataMap.put(key, value);
-        return true;
-
+        return false; // Not within closest 3, do not store
     }
+
 
     public boolean CAS(String key, String currentValue, String newValue) throws Exception {
-	throw new Exception("Not implemented");
+        /* do the following using chat:
+        * figure out the distance thing, what it means and how to implement it
+        * figure out why CAS return a boolean
+        * figure out if key/value pairs in the CRN document are for stored data pairs or node data pairs
+        * figure out a way to test for handleIncomingMessages method
+        * */
+
+        return false;
     }
+
+    //to do extra methods:
+    /*
+    *name request-response messages
+    *nearest
+    *information
+    * */
+
 }
